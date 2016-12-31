@@ -1,0 +1,18 @@
+--- a/src/backend/postmaster/pgstat.c	2015-10-05 21:12:06.000000000 +0200
++++ b/src/backend/postmaster/pgstat.c	2016-12-31 17:24:37.000000000 +0100
+@@ -347,11 +347,13 @@
+ 	hints.ai_addr = NULL;
+ 	hints.ai_canonname = NULL;
+ 	hints.ai_next = NULL;
+-	ret = pg_getaddrinfo_all("localhost", NULL, &hints, &addrs);
++	char hostname[128];
++	gethostname(&hostname, sizeof hostname);
++	ret = pg_getaddrinfo_all(hostname, NULL, &hints, &addrs);
+ 	if (ret || !addrs)
+ 	{
+ 		ereport(LOG,
+-				(errmsg("could not resolve \"localhost\": %s",
++				(errmsg("could not get any addr: %s",
+ 						gai_strerror(ret))));
+ 		goto startup_failed;
+ 	}
