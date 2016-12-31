@@ -2,6 +2,9 @@
 
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
+# tag subprocess outputs as debug messages
+exec 1> >(sed -r -e '/^CLIENT_[A-Z_]+: /n;s/^/CLIENT_DEBUG: /') 2>&1
+
 function status() {
     data_dir=${OPENSHIFT_PG_DATA_DIR-}
     if [ ! -z "$data_dir" -a -s $data_dir/postmaster.pid ]; then
