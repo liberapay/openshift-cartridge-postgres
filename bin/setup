@@ -2,6 +2,10 @@
 
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
+cd $(dirname $(dirname $0))
+repo_root="$(pwd)"
+cd -
+
 case $1 in
     -v|--version)  ver="$2"
 esac
@@ -20,6 +24,10 @@ wget -c -O $ver.tar.bz2 http://ftp.postgresql.org/pub/source/v$ver/postgresql-$v
 echo "building postgresql..."
 tar xaf $ver.tar.bz2
 cd postgresql-$ver
+patches_dir="$repo_root/versions/$ver/patches"
+if [ -d $patches_dir ]; then
+    for f in $patches_dir/*.patch; do patch -p1 -i $f --verbose; done
+fi
 ./configure --prefix=/usr --disable-nls --enable-thread-safety
 make -C src all
 make -C contrib all
@@ -90,7 +98,7 @@ else
 fi
 
 echo "adding server configuration..."
-erb  $version_dir/conf/pg_hba.conf.erb > $data_dir/pg_hba.conf
-erb  $version_dir/conf/postgresql.conf.erb > $data_dir/postgresql.conf
+erb $repo_root/versions/$ver/conf/pg_hba.conf.erb > $data_dir/pg_hba.conf
+erb $repo_root/versions/$ver/conf/postgresql.conf.erb > $data_dir/postgresql.conf
 
 client_result "postgresql-$ver setup completed"

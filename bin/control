@@ -5,22 +5,17 @@ source $OPENSHIFT_CARTRIDGE_SDK_BASH
 function status() {
     data_dir=${OPENSHIFT_PG_DATA_DIR-}
     if [ ! -z "$data_dir" -a -s $data_dir/postmaster.pid ]; then
-        client_result "$OPENSHIFT_PG_IDENT is running"
+        client_result "$OPENSHIFT_PG_IDENT seems to be running"
         client_result "Connect using:  psql ${OPENSHIFT_PG_DB_URL-}"
         return 0
     else
-        client_result "$OPENSHIFT_PG_IDENT is not running"
+        client_error "$OPENSHIFT_PG_IDENT is not running"
         return 1
     fi
 }
 
 function start() {
-    if [ -s $OPENSHIFT_PG_DATA_DIR/postmaster.pid ]; then
-        client_result "$OPENSHIFT_PG_IDENT is running already."
-        return 0
-    fi
-
-    client_result "starting $OPENSHIFT_PG_IDENT..."
+    client_message "starting $OPENSHIFT_PG_IDENT..."
     out=$OPENSHIFT_TMP_DIR/pg-startup.out
     if ! nohup pg_ctl -D $OPENSHIFT_PG_DATA_DIR start -w -t 120 &>$out; then
         cat $out
@@ -33,7 +28,7 @@ function start() {
     migration_marker=$prev_data_dir/MIGRATED
     if [ "$prev_version_major" != "$OPENSHIFT_PG_VERSION_MAJOR" ] &&
        [ ! -f $migration_marker ]; then
-        client_result "migrating the database..."
+        client_message "migrating the database..."
         prev_version_dir=$OPENSHIFT_PG_DIR/$OPENSHIFT_PG_PREV_VERSION
         export LC_ALL=en_US.UTF-8
         $prev_version_dir/usr/bin/pg_upgrade \
@@ -43,13 +38,13 @@ function start() {
             -D $OPENSHIFT_PG_DATA_DIR \
             --link
         touch $migration_marker
-        client_result "migration done, please check that everything is okay, then delete $prev_data_dir and $prev_version_dir"
+        client_message "migration done, please check that everything is okay, then delete $prev_data_dir and $prev_version_dir"
     fi
 
     export PGUSER= PGHOST= PGPORT=$OPENSHIFT_PG_PRIVATE_PORT
     db_exists=$(psql -c '' &>/dev/null && echo 1 || echo 0)
     if [ "$db_exists" -ne 1 ]; then
-        client_result "creating the database..."
+        client_message "creating the database..."
         createuser $OPENSHIFT_PG_DB_USERNAME || true
         createdb -O $OPENSHIFT_PG_DB_USERNAME $PGDATABASE
     fi
@@ -64,12 +59,7 @@ function start() {
 }
 
 function stop() {
-    data_dir=${OPENSHIFT_PG_DATA_DIR-}
-    if [ -z "$data_dir" -o -s $OPENSHIFT_PG_DATA_DIR/postmaster.pid ]; then
-        client_result "$OPENSHIFT_PG_IDENT is not running."
-        return 0
-    fi
-    client_result "stopping $OPENSHIFT_PG_IDENT..."
+    client_message "stopping $OPENSHIFT_PG_IDENT..."
     pg_ctl -m fast -D $OPENSHIFT_PG_DATA_DIR stop
     return 0
 }

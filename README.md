@@ -1,4 +1,4 @@
-A Postgres 9.4.5 Cartridge for OpenShift v2.
+A Postgres 9.4.10 Cartridge for OpenShift v2.
 
 Note: this cartridge does NOT run in an Auto-Scale app configuration.
 
